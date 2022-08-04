@@ -9,7 +9,7 @@ load_dotenv()
 
 
 class Postgresql:
-    """Singleton design pattern"""
+    """Singleton design pattern to manage postgresql database connections and perform operations."""
     _DATABASE: str = os.getenv('DATABASE')
     _USERNAME: str = os.getenv('DB_USER')
     _PASSWORD: str = os.getenv('PASSWORD')
@@ -32,6 +32,7 @@ class Postgresql:
                           f"{type(e)}: {e}")
                 sys.exit()
         else:
+            log.debug(f"Returning existing connection: {cls._connection}")
             return cls._connection
 
     @classmethod
@@ -40,17 +41,18 @@ class Postgresql:
             try:
                 cls._cursor = cls.get_connection().cursor()
                 log.debug(f"Cursor open successfully: {cls._cursor}")
+                return cls._cursor
             except Exception as e:
                 log.error("An exception occurred when attempting to get a cursor. "
                           f"{type(e)}: {e}")
                 sys.exit()
         else:
+            log.debug(f"Returning existing cursor: {cls._connection}")
             return cls._cursor
 
     @classmethod
     def close(cls):
         try:
-            cls._cursor.close()
             cls._connection.close()
             log.info("Connection closed successfully")
         except Exception as e:
@@ -59,6 +61,8 @@ class Postgresql:
 
 if __name__ == '__main__':
     Postgresql.get_connection()
-    Postgresql.get_cursor()
+    cursor = Postgresql.get_cursor()
+    cursor.execute('SELECT * FROM persona ORDER BY id')
+    rows = cursor.fetchall()
+    print(rows)
     Postgresql.close()
-
